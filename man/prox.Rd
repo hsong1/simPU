@@ -2,12 +2,11 @@
 % Please edit documentation in R/utils.R
 \name{prox}
 \alias{prox}
-\title{proximal function
-objective = f(w)+alpha*g(w), g=l0 or l1}
+\title{proximal function}
 \usage{
-prox(x, alpha, norm = c("l0", "l1"))
+prox(x, alpha, func = c("l0", "l1", "l0proj"))
 }
 \description{
-proximal function
-objective = f(w)+alpha*g(w), g=l0 or l1
+objective = f(w)+g(w);
+g(w) = alpha*norm(w)_0(func = "l0"), alpha*norm(w)_1 (func="l1") or I_(norm(w)_0<=alpha)(w) (func="l0proj")
 }

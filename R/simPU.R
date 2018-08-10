@@ -2,19 +2,20 @@
 #'@export
 #'
 simPU<-function(Xlu,zlu,step_size,
-                method = c("Kernel","PAVA","true"),eps = 1e-3,epoch=10,warmstart=T,
-                penalty = c("l0","l1"),lambda = 0, l2projection=FALSE,
+                method = c("PAVA","Kernel","true"),eps = 1e-4,epoch=10,warmstart=T,
+                penalty = c("l0","l1","l0proj"),lambda = 0,cardinality =ncol(Xlu),l2projection=TRUE,
                 initial= NULL,pr1=NULL,betas=NULL,verbose=F){
   
-  method = match.arg(method,c("Kernel","PAVA","true"))
-  penalty = match.arg(penalty, c("l0","l1"))
-  eta = step_size 
+  method = match.arg(method,c("PAVA","Kernel","true"))
+  penalty = match.arg(penalty, c("l0","l1","l0proj"))
+  eta = step_size
+  if(penalty=="l0proj"&&cardinality<ncol(Xlu)){lambda=1}
   
   l2err = c()
   nl = sum(zlu); nu = length(zlu)-nl; n = nl+nu ; p = ncol(Xlu)
   
   #If no initialization available, do a random initialization
-  if(is.null(initial)){beta = rnorm(p)}else{beta=initial}
+  if(is.null(initial)){beta= rep(0,p)}else{beta=initial}
   
   # Start iteration
   ff = c()
@@ -68,11 +69,19 @@ simPU<-function(Xlu,zlu,step_size,
     }
     # update beta
     if(lambda>0){
-      beta1 = prox(beta - eta*vt,alpha = eta*lambda,norm = penalty)
-      if(l2projection){beta1 = proj(beta,1,"l2")}
+      # if penalty="l0proj", project a gradient step onto l0 <= lambda ball
+      # otherwise do prox_{\eta\lambda*penalty}(gradient step)
+      if(penalty =="l0proj"){
+        alpha = cardinality
+      }else{
+        alpha = eta*lambda
+      }
+      # take a proximal step
+      beta1 = prox(beta - eta*vt,alpha = alpha,func = penalty)
+      if(l2projection){beta1 = proj(beta1,1,"l2")}
     }else{
       beta1 = beta - eta*vt
-      if(l2projection){beta1 = proj(beta,1,"l2")}
+      if(l2projection){beta1 = proj(beta1,1,"l2")}
     }
     
     # difference between beta_(t+1)-beta_t
@@ -103,12 +112,13 @@ simPU<-function(Xlu,zlu,step_size,
   
   # Finally scale to unit vector
   if(!l2projection){
-    beta = beta/sqrt(as.numeric(crossprod(beta)))
+    beta = proj(beta,1,"l2")
   }
   # Return
+  
   if(!is.null(betas)){
-    return(list(beta=beta,l2err=l2err,fval=ff,betaMat=betaMat,convergence=converged))
+    return(structure(list(beta=beta,sqloss=ff,l2err=l2err,betaMat=betaMat,convergence=converged,call=match.call()),class="simPU"))
   }else{
-    return(beta,sqloss=ff,convergence=converged)
+    return(structure(list(beta=beta,sqloss=ff,betaMat=betaMat,convergence=converged,call=match.call()),class="simPU"))
   }
 }
