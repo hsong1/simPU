@@ -28,6 +28,7 @@ cv.simPU<-function(Xlu,zlu,step_size,
   
   if(verbose){cat('Fitting full data\n')}
   if(is.null(initial)){initial = rep(0,p)}
+
   betaMat<-matrix(NA,nrow=p,ncol=length(lambdaseq))
   for(j in 1:length(lambdaseq)){
     res.full<-simPU(Xlu = Xlu,zlu = zlu,step_size = step_size,method = method,
@@ -89,6 +90,7 @@ cv.simPU<-function(Xlu,zlu,step_size,
             return(sqloss)
   
           }
+
   stopCluster(cl)
   
   cvm = apply(res,1,mean); cvsd = apply(res,1,sd)
@@ -98,7 +100,7 @@ cv.simPU<-function(Xlu,zlu,step_size,
   } else {
     ind1se <-  max(ind)
   }
-  
+
   if(penalty!="l0proj"){
     
     lambda.min <- lambdaseq[indmin]
